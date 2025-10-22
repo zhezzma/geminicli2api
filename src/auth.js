@@ -52,7 +52,7 @@ async function discoverProjectId(account, accessToken) {
         return projectDiscoveryResponse.cloudaicompanionProject;
     }
 
-    const response2 = await fetch(
+    const responseProjects = await fetch(
         'https://cloudresourcemanager.googleapis.com/v1/projects',
         {
             headers: {
@@ -61,18 +61,15 @@ async function discoverProjectId(account, accessToken) {
             }
         }
     );
-    const data = await response2.json();
-    console.log(data)
+    const projectsResult = await responseProjects.json();
+    console.log(projectsResult)
     //找出可用的projectId
-    if (data.projects && Array.isArray(data.projects)) {
-        const activeProject = data.projects.find(project => project.lifecycleState === 'ACTIVE');
+    if (projectsResult.projects && Array.isArray(projectsResult.projects)) {
+        const activeProject = projectsResult.projects.find(project => project.lifecycleState === 'ACTIVE');
         if (activeProject) {
             return activeProject.projectId;
         }
     }
-
-
-
     return ""
 }
 
