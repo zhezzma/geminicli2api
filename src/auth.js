@@ -26,7 +26,7 @@ const CODE_ASSIST_ENDPOINT = 'https://cloudcode-pa.googleapis.com';
 const CODE_ASSIST_API_VERSION = 'v1internal';
 
 const projects = {
-
+    "zhemima@gmail.com": "celtic-tendril-437511-t2"
 }
 
 async function discoverProjectId(account, accessToken) {
@@ -110,7 +110,7 @@ async function auth() {
     });
 
     //先随便设置一个,只要不报错就可以..
-    process.env.GOOGLE_CLOUD_PROJECT = projects[0]
+    process.env.GOOGLE_CLOUD_PROJECT = "5555555555"
 
     //都会存储到oauth_creds
     await geminiConfig.refreshAuth(AuthType.LOGIN_WITH_GOOGLE);
@@ -123,6 +123,12 @@ async function auth() {
     const project = await discoverProjectId(oauth_creds.account, oauth_creds.access_token);
     if (project) {
         oauth_creds.project = project;
+        //https://shell.cloud.google.com/?authuser=3&hl=zh_CN&fromcloudshell=true&show=ide%2Cterminal
+        //激活api
+        //gcloud projects list
+        //gcloud services enable cloudaicompanion.googleapis.com --project=celtic-tendril-437511-t2
+        //gcloud services enable aiplatform.googleapis.com --project=celtic-tendril-437511-t2
+
     }
     else {
         console.log("没有获得项目请手动设置到 projects 中")
