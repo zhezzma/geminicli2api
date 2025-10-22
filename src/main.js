@@ -45,8 +45,7 @@ async function initializeCodeAssist() {
   return codeAssist;
 }
 
-const codeAssist = await initializeCodeAssist();
-
+let codeAssist = null;
 const app = new H3();
 // 全局 CORS 中间件
 app.use(corsMiddleware);
@@ -85,6 +84,9 @@ app.post('/v1/chat/completions', async (event) => {
   const authResult = apiTokenAuth(event);
   if (authResult !== false) {
     return authResult;
+  }
+  if (codeAssist == null) {
+    codeAssist = await initializeCodeAssist();
   }
   return await handleChatCompletion(event, codeAssist, config.defaultModel);
 });

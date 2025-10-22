@@ -7,7 +7,7 @@ dotenv.config();
 
 
 //https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/code_assist/storage.ts
-
+//C:\Users\zhepa\.gemini\oauth_creds.json
 function getCustomOAuthCredsPath() {
   return process.env.GOOGLE_APPLICATION_CREDENTIALS || '/app/oauth_creds.json'
 }
