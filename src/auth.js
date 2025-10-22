@@ -49,15 +49,12 @@ const geminiConfig = new Config({
     noBrowser: false,//当为true会获得一个连接..然后访问输入 authorization code
 });
 
-// zheaama  "avian-pact-427320-p2"
-process.env.GOOGLE_CLOUD_PROJECT = "avian-pact-427320-p2"
-
 const projects = {
     "zheaama@gmail.com": "avian-pact-427320-p2",
+    "zhemima@gmail.com": "optimal-connection-cqkn2",
 }
-
-
-
+//先随便设置一个,只要不报错就可以..
+process.env.GOOGLE_CLOUD_PROJECT = projects[0]
 
 //都会存储到oauth_creds
 await geminiConfig.refreshAuth(AuthType.LOGIN_WITH_GOOGLE);
