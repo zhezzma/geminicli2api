@@ -1,0 +1,23 @@
+{
+  "name": "geminicli2api",
+  "version": "1.0.0",
+  "description": "HTTP server to convert OpenAI requests to Gemini CLI format",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "node --watch src/main.js",
+    "build": "node build.js",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@google/gemini-cli-core": "latest",
+    "dotenv": "^16.4.5",
+    "h3": "^2.0.1-rc.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "esbuild": "^0.25.5"
+  }
+}
