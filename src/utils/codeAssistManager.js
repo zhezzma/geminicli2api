@@ -248,6 +248,9 @@ class AccountsManager {
           }
           else if (accountsConfig.googleAppCredentialsAccounts && accountsConfig.googleAppCredentialsAccounts.length > 0) {
             const selectedCredentials = randomSelectFromArray(accountsConfig.googleAppCredentialsAccounts);
+            if (selectedCredentials.project) {
+              process.env.GOOGLE_CLOUD_PROJECT = selectedCredentials.project
+            }
             process.env.GOOGLE_APPLICATION_CREDENTIALS = await saveCredentialsToTempFile(selectedCredentials);
           }
           else {

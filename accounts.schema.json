@@ -52,6 +52,10 @@
                         "type": "string",
                         "description": "OAuth 2.0 account"
                     },
+                    "project": {
+                        "type": "string",
+                        "description": "OAuth 2.0 account"
+                    },
                     "access_token": {
                         "type": "string",
                         "description": "OAuth 2.0 access token"
