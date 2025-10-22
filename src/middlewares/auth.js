@@ -10,7 +10,7 @@ import config from '../config.js';
  */
 export default function apiTokenAuth(event) {
     // 如果未配置 API_TOKEN，则跳过认证
-    if (!config.token) {
+    if (!config.apiToken) {
         // 在开发环境中，这可能是预期的行为，但在生产中应发出警告
         if (process.env.NODE_ENV === 'production') {
             console.warn('警告: API_TOKEN 未在生产环境中配置，API 对外开放！');
@@ -35,7 +35,7 @@ export default function apiTokenAuth(event) {
         });
     }
 
-    if (token !== config.token) {
+    if (token !== config.apiToken) {
         throw new HTTPError({
             statusCode: 401,
             statusMessage: 'Unauthorized: Invalid API token.'
