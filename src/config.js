@@ -14,7 +14,7 @@ const config = {
   googleApplicationCredentials: '/app/oauth_creds.json',
   appAccountsPath: process.env.APP_ACCOUNTS_PATH || "/app/accounts.json",
   appAccountsEnabled: (process.env.APP_ACCOUNTS_ENABLE || 'true').toLowerCase() !== 'false',
-
+  appAccountsSelectionType: process.env.APP_ACCOUNTS_SELECTION_TYPE || "roundRobin",
   // CLI configuration
   cliVersion: process.env.CLI_VERSION || process.version,
   debugMode: process.env.DEBUG === 'true',

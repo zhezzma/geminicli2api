@@ -1,4 +1,4 @@
-import { AuthType, createCodeAssistContentGenerator, createContentGeneratorConfig, createContentGenerator, Config, Storage } from '@google/gemini-cli-core';
+import { AuthType, createCodeAssistContentGenerator, createContentGeneratorConfig, createContentGenerator, clearOauthClientCache, clearCachedCredentialFile, Config, Storage } from '@google/gemini-cli-core';
 import fs from 'fs/promises';
 import * as fsSync from 'fs';
 import os from 'os';
@@ -6,15 +6,6 @@ import path from 'path';
 import process from 'process';
 import { HTTPError } from 'h3';
 import config from '../config.js';
-
-/**
- * Helper function to randomly select from array
- */
-function randomSelectFromArray(arr) {
-  if (!arr || arr.length === 0) return null;
-  const randomIndex = Math.floor(Math.random() * arr.length);
-  return arr[randomIndex];
-}
 
 /**
  * Helper function to save credentials to temporary oauth_creds.json file
@@ -90,8 +81,8 @@ async function createCodeAssist(authType) {
 
   //通过geminiConfig创建生成器,不初始化也没有关系
   //await geminiConfig.initialize();
-  await geminiConfig.refreshAuth(authType);
-  const contentGenerator = geminiConfig.getContentGenerator();
+  // await geminiConfig.refreshAuth(authType);
+  // const contentGenerator = geminiConfig.getContentGenerator();
 
   //手动创建支持多个认证方式的生成器
   // const newContentGeneratorConfig = createContentGeneratorConfig(
@@ -99,29 +90,29 @@ async function createCodeAssist(authType) {
   //   authType,
   // );
 
-  // contentGenerator = await createContentGenerator(
+  // const contentGenerator = await createContentGenerator(
   //   newContentGeneratorConfig,
   //   geminiConfig,
   //   geminiConfig.getSessionId(),
   // );
 
   // 该方法只能使用AuthType.LOGIN_WITH_GOOGLE
-  // if (authType != AuthType.LOGIN_WITH_GOOGLE) {
-  //   throw new HTTPError("该方法只支持LOGIN_WITH_GOOGLE认证类型")
-  // }
-  // const version = config.cliVersion;
-  // const userAgent = `GeminiCLI/${version} (${process.platform}; ${process.arch})`;
-  // const baseHeaders = {
-  //   'User-Agent': userAgent,
-  // };
+  if (authType != AuthType.LOGIN_WITH_GOOGLE) {
+    throw new HTTPError("该方法只支持LOGIN_WITH_GOOGLE认证类型")
+  }
+  const version = config.cliVersion;
+  const userAgent = `GeminiCLI/${version} (${process.platform}; ${process.arch})`;
+  const baseHeaders = {
+    'User-Agent': userAgent,
+  };
 
-  // const httpOptions = { headers: baseHeaders };
-  // contentGenerator = await createCodeAssistContentGenerator(
-  //   httpOptions,
-  //   AuthType.LOGIN_WITH_GOOGLE,
-  //   geminiConfig,
-  //   geminiConfig.getSessionId()
-  // );
+  const httpOptions = { headers: baseHeaders };
+  const contentGenerator = await createCodeAssistContentGenerator(
+    httpOptions,
+    AuthType.LOGIN_WITH_GOOGLE,
+    geminiConfig,
+    geminiConfig.getSessionId()
+  );
 
   console.log('Gemini Code Assist initialized successfully');
   return contentGenerator;
@@ -135,7 +126,8 @@ class AccountsManager {
 
   constructor() {
     this.accountsPath = config.appAccountsPath;
-
+    // Round-robin state counters for each account type
+    this.roundRobinIndex = 0;
   }
 
   /**
@@ -161,6 +153,52 @@ class AccountsManager {
       return value.split(';').filter(item => item.trim()).map(item => item.trim());
     }
     return [];
+  }
+
+  /**
+   * Randomly select from array
+   * @param {Array} arr - Array to select from
+   * @returns {*} - Random element from array
+   */
+  randomSelectFromArray(arr) {
+    if (!arr || arr.length === 0) return null;
+    const randomIndex = Math.floor(Math.random() * arr.length);
+    return arr[randomIndex];
+  }
+
+  /**
+   * Round-robin select from array
+   * @param {Array} arr - Array to select from
+   * @param {string} accountType - Type of account for tracking index
+   * @returns {*} - Next element in round-robin order
+   */
+  roundRobinSelectFromArray(arr) {
+    if (!arr || arr.length === 0) return null;
+
+    // Get current index for this account type
+    const currentIndex = this.roundRobinIndex;
+
+    // Select element at current index
+    const selected = arr[currentIndex];
+
+    // Update index for next selection (wrap around if needed)
+    this.roundRobinIndex = (currentIndex + 1) % arr.length;
+
+    return selected;
+  }
+
+  /**
+   * Select from array using specified strategy
+   * @param {Array} arr - Array to select from
+   * @param {string} accountType - Type of account for tracking
+   * @param {string} selectionType - 'random' or 'roundRobin'
+   * @returns {*} - Selected element
+   */
+  selectFromArray(arr) {
+    if (config.appAccountsSelectionType === 'roundRobin') {
+      return this.roundRobinSelectFromArray(arr);
+    }
+    return this.randomSelectFromArray(arr);
   }
 
   /**
@@ -231,6 +269,11 @@ class AccountsManager {
 
 
   async cleanStorage() {
+
+    clearOauthClientCache();
+    clearCachedCredentialFile();
+    return
+
     const oauth_creds_path = Storage.getOAuthCredsPath();
     const account_path = Storage.getGoogleAccountsPath();
     try {
@@ -262,10 +305,15 @@ class AccountsManager {
         {
           process.env.GOOGLE_GENAI_USE_GCA = 'true';
           if (accountsConfig.googleCloudAccessTokenAccounts && accountsConfig.googleCloudAccessTokenAccounts.length > 0) {
-            process.env.GOOGLE_CLOUD_ACCESS_TOKEN = randomSelectFromArray(accountsConfig.googleCloudAccessTokenAccounts);
+            process.env.GOOGLE_CLOUD_ACCESS_TOKEN = this.selectFromArray(
+              accountsConfig.googleCloudAccessTokenAccounts
+            );
           }
           else if (accountsConfig.googleAppCredentialsAccounts && accountsConfig.googleAppCredentialsAccounts.length > 0) {
-            const selectedCredentials = randomSelectFromArray(accountsConfig.googleAppCredentialsAccounts);
+            await this.cleanStorage();
+            const selectedCredentials = this.selectFromArray(
+              accountsConfig.googleAppCredentialsAccounts
+            );
             process.env.GOOGLE_CLOUD_PROJECT = ""
             if (selectedCredentials.project) {
               process.env.GOOGLE_CLOUD_PROJECT = selectedCredentials.project
@@ -273,7 +321,6 @@ class AccountsManager {
             account = selectedCredentials.account;
             process.env.GOOGLE_APPLICATION_CREDENTIALS = await saveCredentialsToTempFile(selectedCredentials);
             console.log(`当前使用的账号是: ${account}`)
-            await this.cleanStorage();
           }
           else {
             throw new Error("No valid Google credentials found for LOGIN_WITH_GOOGLE auth type");
@@ -283,14 +330,18 @@ class AccountsManager {
 
       case AuthType.USE_GEMINI:
         if (accountsConfig.geminiApiKeyAccounts && accountsConfig.geminiApiKeyAccounts.length > 0) {
-          process.env.GEMINI_API_KEY = randomSelectFromArray(accountsConfig.geminiApiKeyAccounts);
+          process.env.GEMINI_API_KEY = this.selectFromArray(
+            accountsConfig.geminiApiKeyAccounts
+          );
         } else {
           throw new Error("No valid Gemini API keys found for USE_GEMINI auth type");
         }
         break;
       case AuthType.USE_VERTEX_AI:
         if (accountsConfig.googleApiKeyAccounts && accountsConfig.googleApiKeyAccounts.length > 0) {
-          process.env.GOOGLE_API_KEY = randomSelectFromArray(accountsConfig.googleApiKeyAccounts);
+          process.env.GOOGLE_API_KEY = this.selectFromArray(
+            accountsConfig.googleApiKeyAccounts
+          );
           process.env.GOOGLE_GENAI_USE_VERTEXAI = 'true';
         } else {
           throw new Error("No valid Google API keys found for USE_VERTEX_AI auth type");
