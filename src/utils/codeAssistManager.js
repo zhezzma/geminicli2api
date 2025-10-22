@@ -230,6 +230,27 @@ class AccountsManager {
   }
 
 
+  async cleanStorage() {
+    const oauth_creds_path = Storage.getOAuthCredsPath();
+    const account_path = Storage.getGoogleAccountsPath();
+    try {
+      if (oauth_creds_path && await fs.exists(oauth_creds_path)) {
+        await fs.unlink(oauth_creds_path);
+        console.log(`Deleted file: ${oauth_creds_path}`);
+      }
+    } catch (err) {
+      console.error('Failed to delete oauth_creds_path:', err);
+    }
+
+    try {
+      if (account_path && await fs.exists(account_path)) {
+        await fs.unlink(account_path);
+        console.log(`Deleted file: ${account_path}`);
+      }
+    } catch (err) {
+      console.error('Failed to delete account_path:', err);
+    }
+  }
 
   /**
    * Get code assist from accounts
@@ -255,6 +276,7 @@ class AccountsManager {
             account = selectedCredentials.account;
             process.env.GOOGLE_APPLICATION_CREDENTIALS = await saveCredentialsToTempFile(selectedCredentials);
             console.log(`当前使用的账号是: ${account}`)
+            await this.cleanStorage();
           }
           else {
             throw new Error("No valid Google credentials found for LOGIN_WITH_GOOGLE auth type");
