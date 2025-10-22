@@ -13,9 +13,7 @@ const config = {
 
   googleApplicationCredentials: '/app/oauth_creds.json',
   appAccountsPath: process.env.APP_ACCOUNTS_PATH || "/app/accounts.json",
-  appAccountsEnabled: process.env.APP_ACCOUNTS_ENABLE || false,
-
-
+  appAccountsEnabled: (process.env.APP_ACCOUNTS_ENABLE || 'true').toLowerCase() !== 'false',
 
   // CLI configuration
   cliVersion: process.env.CLI_VERSION || process.version,
