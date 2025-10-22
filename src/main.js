@@ -11,21 +11,22 @@ import fs from 'fs/promises'
 
 //https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/config/storage.ts
 //https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/code_assist/oauth2.ts
-async function CheckGoogleAuthentication() {
+//https://github.com/google-gemini/gemini-cli/blob/main/packages/cli/src/validateNonInterActiveAuth.ts
+async function getAuthTypeFromEnv() {
   if (process.env.GOOGLE_GENAI_USE_VERTEXAI) {
     console.log(`当前使用的认证方式是${AuthType.USE_VERTEX_AI}:${process.env.GOOGLE_API_KEY}`)
-    return;
+    return AuthType.USE_VERTEX_AI;
   }
 
   if (process.env.GEMINI_API_KEY) {
     console.log(`当前使用的认证方式是${AuthType.USE_GEMINI}:${process.env.GEMINI_API_KEY}`)
-    return;
+    return AuthType.USE_GEMINI;
   }
 
   if (process.env.GOOGLE_GENAI_USE_GCA && process.env.GOOGLE_CLOUD_ACCESS_TOKEN) {
     //GOOGLE_CLOUD_ACCESS_TOKEN就是 下面oauth_creds.json中的access_token
     console.log(`当前使用的认证方式是${AuthType.LOGIN_WITH_GOOGLE}:${process.env.GOOGLE_CLOUD_ACCESS_TOKEN}`)
-    return;
+    return AuthType.LOGIN_WITH_GOOGLE;
   }
 
   //C:\Users\zhepa\.gemini\oauth_creds.json  ~/.gemini/oauth_creds.json
@@ -34,34 +35,22 @@ async function CheckGoogleAuthentication() {
     await fs.access(filePath, fs.constants.F_OK);
     // 如果上面的代码没有抛出错误，说明文件存在
     console.log(`当前使用的认证方式是 ${AuthType.LOGIN_WITH_GOOGLE}:${filePath}`);
-    return; // 或者 return true;
+    return AuthType.LOGIN_WITH_GOOGLE;
   } catch (error) {
     console.log(`认证文件不存在: ${filePath}`);
   }
 
   if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     console.log(`当前使用的认证方式是${AuthType.LOGIN_WITH_GOOGLE}:${process.env.GOOGLE_APPLICATION_CREDENTIALS}`)
-    return;
+    return AuthType.LOGIN_WITH_GOOGLE;
   }
 
   //设置成docker的默认路径
   process.env.GOOGLE_APPLICATION_CREDENTIALS = '/app/oauth_creds.json';
   console.log(`当前使用的认证方式是${AuthType.LOGIN_WITH_GOOGLE}:${process.env.GOOGLE_APPLICATION_CREDENTIALS}`)
-}
-
-//https://github.com/google-gemini/gemini-cli/blob/main/packages/cli/src/validateNonInterActiveAuth.ts
-function getAuthTypeFromEnv() {
-  if (process.env['GOOGLE_GENAI_USE_GCA'] === 'true') {
-    return AuthType.LOGIN_WITH_GOOGLE;
-  }
-  if (process.env['GOOGLE_GENAI_USE_VERTEXAI'] === 'true') {
-    return AuthType.USE_VERTEX_AI;
-  }
-  if (process.env['GEMINI_API_KEY']) {
-    return AuthType.USE_GEMINI;
-  }
   return AuthType.LOGIN_WITH_GOOGLE;
 }
+
 
 
 let contentGenerator = null;
@@ -71,8 +60,7 @@ async function GetCodeAssist() {
   if (contentGenerator != null) {
     return contentGenerator;
   }
-  CheckGoogleAuthentication();
-
+  const authType = getAuthTypeFromEnv();
   const geminiConfig = new Config({
     sessionId: "",
     model: config.defaultModel,
@@ -101,7 +89,7 @@ async function GetCodeAssist() {
   //手动创建支持多个认证方式的生成器
   // const newContentGeneratorConfig = createContentGeneratorConfig(
   //   geminiConfig,
-  //   getAuthTypeFromEnv(),
+  //   authType,
   // );
 
   // contentGenerator = await createContentGenerator(
@@ -112,7 +100,7 @@ async function GetCodeAssist() {
 
   //通过geminiConfig创建生成器
   //await geminiConfig.initialize();
-  await geminiConfig.refreshAuth(getAuthTypeFromEnv());
+  await geminiConfig.refreshAuth(authType);
   contentGenerator = geminiConfig.getContentGenerator();
 
   console.log('Gemini Code Assist initialized successfully');
