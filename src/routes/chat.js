@@ -5,10 +5,11 @@ import { convertGeminiToOpenAI, convertGeminiChunkToOpenAI, convertOpenAIToGemin
  * Handle chat completion requests
  * @param {import('h3').H3Event} event - H3 事件对象。
  * @param {import('@google/gemini-cli-core').ContentGenerator} codeAssist - Gemini code assist instance
+ * @param {string} account - account
  * @param {string} defaultModel - Default model name
  * @returns {Promise<Response>} - Response object
  */
-export async function handleChatCompletion(event, codeAssist, defaultModel) {
+export async function handleChatCompletion(event, codeAssist, account, defaultModel) {
   try {
     const body = await readBody(event);
     const params = body || {};
@@ -31,7 +32,7 @@ export async function handleChatCompletion(event, codeAssist, defaultModel) {
       contents: contents,
     };
 
-    console.log(`Processing request: model=${model}, streaming=${isStreaming}`);
+    console.log(`Processing request: account=${account}, model=${model}, streaming=${isStreaming}`);
 
     if (!isStreaming) {
       // Non-streaming response
@@ -72,7 +73,7 @@ export async function handleChatCompletion(event, codeAssist, defaultModel) {
   } catch (error) {
     throw new HTTPError({
       statusCode: 400,
-      body: { error: `${error.message}` },
+      body: { error: `${account}: ${error.message}` },
     });
   }
 }

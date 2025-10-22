@@ -238,6 +238,7 @@ class AccountsManager {
     if (this.config == null) {
       throw new Error("No valid accounts configuration found");
     }
+    let account = "";
     const accountsConfig = this.config;
     switch (accountsConfig.authType) {
       case AuthType.LOGIN_WITH_GOOGLE:
@@ -251,7 +252,9 @@ class AccountsManager {
             if (selectedCredentials.project) {
               process.env.GOOGLE_CLOUD_PROJECT = selectedCredentials.project
             }
+            account = selectedCredentials.account;
             process.env.GOOGLE_APPLICATION_CREDENTIALS = await saveCredentialsToTempFile(selectedCredentials);
+            console.log(`当前使用的账号是: ${account}`)
           }
           else {
             throw new Error("No valid Google credentials found for LOGIN_WITH_GOOGLE auth type");
@@ -275,7 +278,8 @@ class AccountsManager {
         }
         break;
     }
-    return await createCodeAssist(accountsConfig.authType);
+    const codeAssist = await createCodeAssist(accountsConfig.authType);
+    return { codeAssist, account }
   }
 }
 
@@ -292,12 +296,12 @@ export async function GetCodeAssist() {
   }
 
   if (codeAssist != null) {
-    return codeAssist;
+    return { codeAssist, account: "" };
   }
 
   const authType = await getAuthTypeFromEnv();
   codeAssist = await createCodeAssist(authType);
-  return codeAssist;
+  return { codeAssist, account: "" };
 }
 
 export { AccountsManager };

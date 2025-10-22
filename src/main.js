@@ -45,8 +45,8 @@ app.post('/v1/chat/completions', async (event) => {
   if (authResult !== false) {
     return authResult;
   }
-  const codeAssist = await GetCodeAssist();
-  return await handleChatCompletion(event, codeAssist, config.defaultModel);
+  const { codeAssist, account } = await GetCodeAssist();
+  return await handleChatCompletion(event, codeAssist,account, config.defaultModel);
 });
 
 
