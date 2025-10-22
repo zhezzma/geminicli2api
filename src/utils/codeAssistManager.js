@@ -234,19 +234,15 @@ class AccountsManager {
     const oauth_creds_path = Storage.getOAuthCredsPath();
     const account_path = Storage.getGoogleAccountsPath();
     try {
-      if (oauth_creds_path && await fs.exists(oauth_creds_path)) {
-        await fs.unlink(oauth_creds_path);
-        console.log(`Deleted file: ${oauth_creds_path}`);
-      }
+      await fs.unlink(oauth_creds_path);
+      console.log(`Deleted file: ${oauth_creds_path}`);
     } catch (err) {
       console.error('Failed to delete oauth_creds_path:', err);
     }
 
     try {
-      if (account_path && await fs.exists(account_path)) {
-        await fs.unlink(account_path);
-        console.log(`Deleted file: ${account_path}`);
-      }
+      await fs.unlink(account_path);
+      console.log(`Deleted file: ${account_path}`);
     } catch (err) {
       console.error('Failed to delete account_path:', err);
     }
@@ -270,7 +266,7 @@ class AccountsManager {
           }
           else if (accountsConfig.googleAppCredentialsAccounts && accountsConfig.googleAppCredentialsAccounts.length > 0) {
             const selectedCredentials = randomSelectFromArray(accountsConfig.googleAppCredentialsAccounts);
-            process.env.GOOGLE_CLOUD_PROJECT= ""
+            process.env.GOOGLE_CLOUD_PROJECT = ""
             if (selectedCredentials.project) {
               process.env.GOOGLE_CLOUD_PROJECT = selectedCredentials.project
             }
