@@ -15,55 +15,119 @@ function getFileContent(filePath) {
     }
     return null;
 }
-const oauth_creds_path = Storage.getOAuthCredsPath();
-const account_path = Storage.getGoogleAccountsPath();
 
 
-try {
-    if (oauth_creds_path && fs.existsSync(oauth_creds_path)) {
-        fs.unlinkSync(oauth_creds_path);
-        console.log(`Deleted file: ${oauth_creds_path}`);
-    }
-} catch (err) {
-    console.error('Failed to delete oauth_creds_path:', err);
-}
-
-try {
-    if (account_path && fs.existsSync(account_path)) {
-        fs.unlinkSync(account_path);
-        console.log(`Deleted file: ${account_path}`);
-    }
-} catch (err) {
-    console.error('Failed to delete account_path:', err);
-}
-
-
-const geminiConfig = new Config({
-    sessionId: "",
-    model: config.defaultModel,
-    embeddingModel: config.defaultEmbeddingModel,
-    sandbox: undefined,
-    targetDir: config.targetDir,
-    debugMode: config.debugMode,
-    question: '',
-    noBrowser: false,//当为true会获得一个连接..然后访问输入 authorization code
-});
+//https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/code_assist/oauth2.ts
+const OAUTH_CLIENT_ID =
+    '681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com';
+const OAUTH_CLIENT_SECRET = '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';
+//https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/code_assist/server.ts#L45
+const CODE_ASSIST_ENDPOINT = 'https://cloudcode-pa.googleapis.com';
+const CODE_ASSIST_API_VERSION = 'v1internal';
 
 const projects = {
-    "zheaama@gmail.com": "avian-pact-427320-p2",
-    "zhemima@gmail.com": "optimal-connection-cqkn2",
+
 }
-//先随便设置一个,只要不报错就可以..
-process.env.GOOGLE_CLOUD_PROJECT = projects[0]
 
-//都会存储到oauth_creds
-await geminiConfig.refreshAuth(AuthType.LOGIN_WITH_GOOGLE);
+async function discoverProjectId(account, accessToken) {
+    if (projects[account]) {
+        return projects[account]
+    }
+    const initialProjectId = "default-project";
+    const response = await fetch(`${CODE_ASSIST_ENDPOINT}/${CODE_ASSIST_API_VERSION}:loadCodeAssist`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+            cloudaicompanionProject: initialProjectId,
+            metadata: { duetProject: initialProjectId }
+        })
+    });
 
-const accounts = getFileContent(account_path);;
+    const projectDiscoveryResponse = await response.json();
+    console.log(JSON.stringify(projectDiscoveryResponse))
+    if (projectDiscoveryResponse.cloudaicompanionProject) {
+        return projectDiscoveryResponse.cloudaicompanionProject;
+    }
 
-const oauth_creds = getFileContent(oauth_creds_path);
+    const response2 = await fetch(
+        'https://cloudresourcemanager.googleapis.com/v1/projects',
+        {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        }
+    );
+    const data = await response2.json();
+    console.log(data)
+    //找出可用的projectId
+    if (data.projects && Array.isArray(data.projects)) {
+        const activeProject = data.projects.find(project => project.lifecycleState === 'ACTIVE');
+        if (activeProject) {
+            return activeProject.projectId;
+        }
+    }
 
-oauth_creds.account = accounts.active;
-oauth_creds.project = projects[oauth_creds.account];
 
-console.log(JSON.stringify(oauth_creds, null, 2));
+
+    return ""
+}
+
+async function auth() {
+
+    const oauth_creds_path = Storage.getOAuthCredsPath();
+    const account_path = Storage.getGoogleAccountsPath();
+    try {
+        if (oauth_creds_path && fs.existsSync(oauth_creds_path)) {
+            fs.unlinkSync(oauth_creds_path);
+            console.log(`Deleted file: ${oauth_creds_path}`);
+        }
+    } catch (err) {
+        console.error('Failed to delete oauth_creds_path:', err);
+    }
+
+    try {
+        if (account_path && fs.existsSync(account_path)) {
+            fs.unlinkSync(account_path);
+            console.log(`Deleted file: ${account_path}`);
+        }
+    } catch (err) {
+        console.error('Failed to delete account_path:', err);
+    }
+
+    const geminiConfig = new Config({
+        sessionId: "",
+        model: config.defaultModel,
+        embeddingModel: config.defaultEmbeddingModel,
+        sandbox: undefined,
+        targetDir: config.targetDir,
+        debugMode: config.debugMode,
+        question: '',
+        noBrowser: false,//当为true会获得一个连接..然后访问输入 authorization code
+    });
+
+    //先随便设置一个,只要不报错就可以..
+    process.env.GOOGLE_CLOUD_PROJECT = projects[0]
+
+    //都会存储到oauth_creds
+    await geminiConfig.refreshAuth(AuthType.LOGIN_WITH_GOOGLE);
+
+    const accounts = getFileContent(account_path);;
+
+    const oauth_creds = getFileContent(oauth_creds_path);
+
+    oauth_creds.account = accounts.active;
+    const project = await discoverProjectId(oauth_creds.account, oauth_creds.access_token);
+    if (project) {
+        oauth_creds.project = project;
+    }
+    else {
+        console.log("没有获得项目请手动设置到 projects 中")
+    }
+    console.log(JSON.stringify(oauth_creds, null, 2));
+}
+
+auth()
