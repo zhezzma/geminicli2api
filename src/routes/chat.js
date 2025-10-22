@@ -9,7 +9,7 @@ import { convertGeminiToOpenAI, convertGeminiChunkToOpenAI, convertOpenAIToGemin
  * @param {string} defaultModel - Default model name
  * @returns {Promise<Response>} - Response object
  */
-export async function handleChatCompletion(event, codeAssist, account, defaultModel) {
+export async function handleChatCompletion(event, codeAssist, defaultModel) {
   try {
     const body = await readBody(event);
     const params = body || {};
@@ -32,7 +32,7 @@ export async function handleChatCompletion(event, codeAssist, account, defaultMo
       contents: contents,
     };
 
-    console.log(`Processing request: account=${account}, model=${model}, streaming=${isStreaming}`);
+    console.log(`Processing request: account=${process.env.GOOGLE_ACCOUNT}, project_id=${process.env.GOOGLE_CLOUD_PROJECT},  model=${model}, streaming=${isStreaming}`);
 
     if (!isStreaming) {
       // Non-streaming response
@@ -48,7 +48,7 @@ export async function handleChatCompletion(event, codeAssist, account, defaultMo
         async start(controller) {
           try {
             for await (const chunk of stream) {
-              console.log(JSON.stringify(chunk))
+              //console.log(JSON.stringify(chunk))
               const openaiChunk = convertGeminiChunkToOpenAI(chunk, model);
               const data = `data: ${JSON.stringify(openaiChunk)}\n\n`;
               controller.enqueue(new TextEncoder().encode(data));

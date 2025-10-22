@@ -119,7 +119,7 @@ async function auth() {
     oauth_creds.account = accounts.active;
     const project = await discoverProjectId(oauth_creds.account, oauth_creds.access_token);
     if (project) {
-        oauth_creds.project = project;
+        oauth_creds.project_id = project;
 
         //使用网页激活api
         //https://console.cloud.google.com/products?authuser=2

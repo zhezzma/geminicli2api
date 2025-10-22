@@ -52,7 +52,7 @@
                         "type": "string",
                         "description": "OAuth 2.0 account"
                     },
-                    "project": {
+                    "project_id": {
                         "type": "string",
                         "description": "OAuth 2.0 account"
                     },

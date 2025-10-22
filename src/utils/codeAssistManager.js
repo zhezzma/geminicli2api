@@ -4,9 +4,8 @@ import * as fsSync from 'fs';
 import os from 'os';
 import path from 'path';
 import process from 'process';
-import { HTTPError } from 'h3';
 import config from '../config.js';
-
+import { execSync } from 'child_process';
 /**
  * Helper function to save credentials to temporary oauth_creds.json file
  */
@@ -67,22 +66,34 @@ async function getAuthTypeFromEnv() {
  * Create code assist instance with specified auth type
  */
 async function createCodeAssist(authType) {
+
+  if (!process.env.CLI_VERSION) {
+    let cliVersion;
+    try {
+      cliVersion = execSync('npm view @google/gemini-cli version').toString().trim();
+    } catch (e) {
+      console.error("Could not determine @google/gemini-cli version, falling back to node version", e);
+    }
+    process.env.CLI_VERSION = cliVersion || process.version ;
+  }
+  console.log(`authType=${authType}, cliVersion=${process.env.CLI_VERSION}`);
+
   //https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/config/config.ts
   const geminiConfig = new Config({
     sessionId: "",
     model: config.defaultModel,
     embeddingModel: config.defaultEmbeddingModel,
     sandbox: undefined,
-    targetDir: config.targetDir,
-    debugMode: config.debugMode,
+    targetDir: './',
+    debugMode: false,
     question: '',
     noBrowser: true,
   });
 
   //通过geminiConfig创建生成器,不初始化也没有关系
   //await geminiConfig.initialize();
-  // await geminiConfig.refreshAuth(authType);
-  // const contentGenerator = geminiConfig.getContentGenerator();
+  await geminiConfig.refreshAuth(authType);
+  const contentGenerator = geminiConfig.getContentGenerator();
 
   //手动创建支持多个认证方式的生成器
   // const newContentGeneratorConfig = createContentGeneratorConfig(
@@ -97,22 +108,22 @@ async function createCodeAssist(authType) {
   // );
 
   // 该方法只能使用AuthType.LOGIN_WITH_GOOGLE
-  if (authType != AuthType.LOGIN_WITH_GOOGLE) {
-    throw new HTTPError("该方法只支持LOGIN_WITH_GOOGLE认证类型")
-  }
-  const version = config.cliVersion;
-  const userAgent = `GeminiCLI/${version} (${process.platform}; ${process.arch})`;
-  const baseHeaders = {
-    'User-Agent': userAgent,
-  };
+  // if (authType != AuthType.LOGIN_WITH_GOOGLE) {
+  //   throw new HTTPError("该方法只支持LOGIN_WITH_GOOGLE认证类型")
+  // }
+  // const version = process.env.CLI_VERSION || process.version;
+  // const userAgent = `GeminiCLI/${version} (${process.platform}; ${process.arch})`;
+  // const baseHeaders = {
+  //   'User-Agent': userAgent,
+  // };
 
-  const httpOptions = { headers: baseHeaders };
-  const contentGenerator = await createCodeAssistContentGenerator(
-    httpOptions,
-    AuthType.LOGIN_WITH_GOOGLE,
-    geminiConfig,
-    geminiConfig.getSessionId()
-  );
+  // const httpOptions = { headers: baseHeaders };
+  // const contentGenerator = await createCodeAssistContentGenerator(
+  //   httpOptions,
+  //   AuthType.LOGIN_WITH_GOOGLE,
+  //   geminiConfig,
+  //   geminiConfig.getSessionId()
+  // );
 
   console.log('Gemini Code Assist initialized successfully');
   return contentGenerator;
@@ -298,7 +309,7 @@ class AccountsManager {
     if (this.config == null) {
       throw new Error("No valid accounts configuration found");
     }
-    let account = "";
+
     const accountsConfig = this.config;
     switch (accountsConfig.authType) {
       case AuthType.LOGIN_WITH_GOOGLE:
@@ -315,12 +326,11 @@ class AccountsManager {
               accountsConfig.googleAppCredentialsAccounts
             );
             process.env.GOOGLE_CLOUD_PROJECT = ""
-            if (selectedCredentials.project) {
-              process.env.GOOGLE_CLOUD_PROJECT = selectedCredentials.project
+            if (selectedCredentials.project_id) {
+              process.env.GOOGLE_CLOUD_PROJECT = selectedCredentials.project_id
             }
-            account = selectedCredentials.account;
+            process.env.GOOGLE_ACCOUNT = selectedCredentials.account;//主要为了显示使用..gemincli中不存在这个环境变量
             process.env.GOOGLE_APPLICATION_CREDENTIALS = await saveCredentialsToTempFile(selectedCredentials);
-            console.log(`当前使用的账号是: ${account}`)
           }
           else {
             throw new Error("No valid Google credentials found for LOGIN_WITH_GOOGLE auth type");
@@ -349,7 +359,7 @@ class AccountsManager {
         break;
     }
     const codeAssist = await createCodeAssist(accountsConfig.authType);
-    return { codeAssist, account }
+    return codeAssist
   }
 }
 
@@ -366,12 +376,12 @@ export async function GetCodeAssist() {
   }
 
   if (codeAssist != null) {
-    return { codeAssist, account: "" };
+    return codeAssist;
   }
 
   const authType = await getAuthTypeFromEnv();
   codeAssist = await createCodeAssist(authType);
-  return { codeAssist, account: "" };
+  return codeAssist;
 }
 
 export { AccountsManager };
