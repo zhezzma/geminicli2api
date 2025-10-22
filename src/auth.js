@@ -123,12 +123,16 @@ async function auth() {
     const project = await discoverProjectId(oauth_creds.account, oauth_creds.access_token);
     if (project) {
         oauth_creds.project = project;
+        //https://console.cloud.google.com/products?authuser=2
+        //https://console.cloud.google.com/gemini-admin/products?authuser=1
+        //https://console.cloud.google.com/marketplace/product/google/cloudaicompanion.googleapis.com
         //https://shell.cloud.google.com/?authuser=3&hl=zh_CN&fromcloudshell=true&show=ide%2Cterminal
         //激活api
         //gcloud projects list
         //gcloud services enable cloudaicompanion.googleapis.com --project=celtic-tendril-437511-t2
         //gcloud services enable aiplatform.googleapis.com --project=celtic-tendril-437511-t2
-
+        //gcloud services enable generativelanguage.googleapis.com --project=celtic-tendril-437511-t2
+        //gcloud services list --enabled --project=celtic-tendril-437511-t2
     }
     else {
         console.log("没有获得项目请手动设置到 projects 中")
