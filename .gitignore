@@ -31,3 +31,5 @@ build/
 # Temporary files
 tmp/
 temp/# Dependencies
+
+accounts.jsonc

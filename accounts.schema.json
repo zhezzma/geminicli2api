@@ -1,0 +1,94 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Accounts Configuration Schema",
+    "description": "Schema for Gemini CLI to API accounts configuration",
+    "type": "object",
+    "properties": {
+        "authType": {
+            "description": "The authentication type to use",
+            "oneOf": [
+                {
+                    "type": "null"
+                },
+                {
+                    "type": "string",
+                    "enum": [
+                        "oauth-personal",
+                        "gemini-api-key",
+                        "vertex-ai",
+                        "cloud-shell"
+                    ]
+                }
+            ]
+        },
+        "googleApiKeyAccounts": {
+            "description": "Google API Key accounts (array of API key strings)",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "geminiApiKeyAccounts": {
+            "description": "Gemini API Key accounts (array of API key strings)",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "googleCloudAccessTokenAccounts": {
+            "description": "Google Cloud Access Token accounts (array of token strings)",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "googleAppCredentialsAccounts": {
+            "description": "Google Application Credentials accounts with OAuth tokens",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "account": {
+                        "type": "string",
+                        "description": "OAuth 2.0 account"
+                    },
+                    "access_token": {
+                        "type": "string",
+                        "description": "OAuth 2.0 access token"
+                    },
+                    "refresh_token": {
+                        "type": "string",
+                        "description": "OAuth 2.0 refresh token"
+                    },
+                    "scope": {
+                        "type": "string",
+                        "description": "OAuth 2.0 scopes"
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "description": "Token type (usually 'Bearer')"
+                    },
+                    "id_token": {
+                        "type": "string",
+                        "description": "OpenID Connect ID token (JWT)"
+                    },
+                    "expiry_date": {
+                        "type": "number",
+                        "description": "Token expiry timestamp in milliseconds"
+                    }
+                },
+                "required": [
+                    "access_token",
+                    "refresh_token",
+                    "scope",
+                    "token_type",
+                    "id_token",
+                    "expiry_date"
+                ]
+            }
+        }
+    },
+    "required": [
+        "authType"
+    ]
+}
