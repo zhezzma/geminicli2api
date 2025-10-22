@@ -10,17 +10,25 @@ const config = {
   host: process.env.HOST || '0.0.0.0',
   apiToken: process.env.API_TOKEN,
 
+
+  googleApplicationCredentials: '/app/oauth_creds.json',
+  appAccountsPath: process.env.APP_ACCOUNTS_PATH || "/app/accounts.json",
+  appAccountsEnabled: process.env.APP_ACCOUNTS_ENABLE || false,
+
+
+
   // CLI configuration
   cliVersion: process.env.CLI_VERSION || process.version,
   debugMode: process.env.DEBUG === 'true',
+  // Target directory for operations
+  targetDir: process.env.TARGET_DIR || './',
 
   // Model defaults
   defaultModel: process.env.DEFAULT_MODEL || DEFAULT_GEMINI_MODEL,
   defaultEmbeddingModel: process.env.DEFAULT_EMBEDDING_MODEL || DEFAULT_GEMINI_EMBEDDING_MODEL,
 
-  // Target directory for operations
-  targetDir: process.env.TARGET_DIR || './',
-  
+
+
 };
 
 export default config;
