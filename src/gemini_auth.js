@@ -95,7 +95,7 @@ async function discoverProjects(account, accessToken) {
     );
     const projectsResult = await responseProjects.json();
     console.log(projectsResult)
-    const enabledProjects = projectsResult.projects.map((project) => project.projectId).filter(x => !filterProjects.account?.includes(x));
+    const enabledProjects = projectsResult.projects.map((project) => project.projectId).filter(x => !filterProjects[account]?.includes(x));
     return enabledProjects;
 }
 
@@ -159,9 +159,11 @@ async function auth() {
     const oldAccounts = appAccountsData.googleAppCredentialsAccounts.filter(x => x.account != accounts.active);
     appAccountsData.googleAppCredentialsAccounts = [...oldAccounts, ...newAccounts]
 
-    fs.writeFileSync(config.appAccountsPath, JSON.stringify(appAccountsData, null, 2));
 
     console.log(JSON.stringify(newAccounts, null, 2));
+
+    return;
+    fs.writeFileSync(config.appAccountsPath, JSON.stringify(appAccountsData, null, 2));
 }
 
 auth()

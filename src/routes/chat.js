@@ -71,9 +71,10 @@ export async function handleChatCompletion(event, codeAssist, defaultModel) {
       return sseStream;
     }
   } catch (error) {
-    throw new HTTPError({
+    const message = `${process.env.GOOGLE_ACCOUNT} - ${process.env.GOOGLE_CLOUD_PROJECT} : ${error.message}`;
+    throw new HTTPError(message, {
       statusCode: 400,
-      body: { error: `${account}: ${error.message}` },
+      body: { error: message },
     });
   }
 }
