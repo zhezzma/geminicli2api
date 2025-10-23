@@ -16,6 +16,10 @@ export async function handleChatCompletion(event, codeAssist, defaultModel) {
 
     const model = params.model || defaultModel;
     const isStreaming = params.stream || false;
+    
+    // Check if includeThoughts header is set to false
+    const includeThoughtsHeader = event.req.headers.get('includethoughts') || event.req.headers.get('includeThoughts') ;
+    const shouldIncludeThoughts = !includeThoughtsHeader ||  includeThoughtsHeader !== 'false';
 
     // Convert OpenAI messages to Gemini format
     const { contents, systemInstruction } = convertOpenAIToGemini(params.messages || []);
@@ -50,6 +54,12 @@ export async function handleChatCompletion(event, codeAssist, defaultModel) {
             for await (const chunk of stream) {
               //console.log(JSON.stringify(chunk))
               const openaiChunk = convertGeminiChunkToOpenAI(chunk, model);
+              
+              // Skip thinking chunks if includeThoughts is false
+              if (!shouldIncludeThoughts && openaiChunk.choices?.[0]?.delta?.type === 'thinking') {
+                continue;
+              }
+              
               const data = `data: ${JSON.stringify(openaiChunk)}\n\n`;
               controller.enqueue(new TextEncoder().encode(data));
             }
