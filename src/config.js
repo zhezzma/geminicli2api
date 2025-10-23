@@ -23,6 +23,5 @@ const config = {
   defaultEmbeddingModel: process.env.DEFAULT_EMBEDDING_MODEL || DEFAULT_GEMINI_EMBEDDING_MODEL,
 };
 
-console
 
 export default config;
