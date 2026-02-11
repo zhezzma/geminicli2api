@@ -10,6 +10,7 @@ import fs from 'node:fs';
 //https://console.cloud.google.com/gemini-admin/products?authuser=1
 //https://console.cloud.google.com/marketplace/product/google/cloudaicompanion.googleapis.com?authuser=1 
 //https://console.cloud.google.com/apis/library/cloudaicompanion.googleapis.com?authuser=1  //同上
+//https://console.cloud.google.com/apis/api/cloudaicompanion.googleapis.com/metrics?project=luminous-empire-428206-e6&authuser=2 //需要带上项目
 
 //使用shell激活api
 //https://shell.cloud.google.com/?authuser=3&hl=zh_CN&fromcloudshell=true&show=ide%2Cterminal

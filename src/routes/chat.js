@@ -16,8 +16,8 @@ export async function handleChatCompletion(event, codeAssist, defaultModel) {
 
     const model = params.model || defaultModel;
     const isStreaming = params.stream || false;
-    
-   
+
+
     // Convert OpenAI messages to Gemini format
     const { contents, systemInstruction } = convertOpenAIToGemini(params.messages || []);
 
@@ -51,12 +51,12 @@ export async function handleChatCompletion(event, codeAssist, defaultModel) {
             for await (const chunk of stream) {
               console.log(JSON.stringify(chunk))
               const openaiChunk = convertGeminiChunkToOpenAI(chunk, model);
-              
+
               // // Skip thinking chunks if includeThoughts is false
               // if (!shouldIncludeThoughts && openaiChunk.choices?.[0]?.delta?.type === 'thinking') {
               //   continue;
               // }
-              
+
               const data = `data: ${JSON.stringify(openaiChunk)}\n\n`;
               controller.enqueue(new TextEncoder().encode(data));
             }
@@ -107,7 +107,13 @@ export function handleModels() {
         owned_by: "google"
       },
       {
-        id: "gemini-2.5-flash-lite",
+        id: "gemini-3-flash-preview",
+        object: "model",
+        created: Date.now(),
+        owned_by: "google"
+      },
+      {
+        id: "gemini-3-pro-preview",
         object: "model",
         created: Date.now(),
         owned_by: "google"
