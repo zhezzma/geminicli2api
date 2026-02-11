@@ -68,15 +68,17 @@ export function convertGeminiChunkToOpenAI(geminiChunk, model) {
   const content = candidate?.content;
   const parts = content?.parts || [];
 
-  let textContent = "";
-  let textType = "text";
+  const delta = {
+    role: "assistant"
+  };
 
   for (const part of parts) {
-    if (part.text) {
-      textContent += part.text;
-    }
     if (part.thought) {
-      textType = "thinking";
+      if (part.text) {
+        delta.reasoning_content = (delta.reasoning_content || "") + part.text;
+      }
+    } else if (part.text) {
+      delta.content = (delta.content || "") + part.text;
     }
   }
 
@@ -92,11 +94,7 @@ export function convertGeminiChunkToOpenAI(geminiChunk, model) {
     choices: [
       {
         index: 0,
-        delta: {
-          role: "assistant",
-          type: textType,
-          content: textContent,
-        },
+        delta: delta,
         finish_reason: finishReason,
       }
     ],
